@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">AndroidChallenge</string>
+    <string name="username">Usuario</string>
+    <string name="password">Contraseña</string>
+    <string name="enter">INGRESAR</string>
+    <string name="dont_have_user_yet">Aun no tengo un usuario.</string>
+    <string name="register_me">Registrarme</string>
+    <string name="welcome">Bienvenido</string>
+    <string name="create_user">Crear usuario</string>
+    <string name="create">CREAR</string>
+    <string name="confirm_password">Confirmar contraseña</string>
+    <string name="username_password_invalid">Usuario o contraseña no validos</string>
+    <string name="my_tasks">Mis tareas</string>
+    <string name="share">Compartir</string>
+    <string name="edit">Editar</string>
+    <string name="delete">Eliminar</string>
+    <string name="add_images">Añadir imágenes</string>
+    <string name="task_name">Nombre de la tarea</string>
+    <string name="description">Descripción</string>
+    <string name="save">GUARDAR</string>
+    <string name="connection_error">Error de conexión</string>
+</resources>

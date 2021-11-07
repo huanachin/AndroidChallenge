@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "264693359543",
+    "project_id": "androidchallenge-cfcd7",
+    "storage_bucket": "androidchallenge-cfcd7.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:264693359543:android:e9105a00ebbdd345f37e32",
+        "android_client_info": {
+          "package_name": "com.example.androidchallenge"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "264693359543-4eh6r3po73mjus1hrvnthg1gafd1obq2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCcnnDuXTB3-93z9R7PnXh2oH27bZhzJyY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "264693359543-4eh6r3po73mjus1hrvnthg1gafd1obq2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
