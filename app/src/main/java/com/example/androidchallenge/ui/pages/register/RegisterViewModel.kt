@@ -6,20 +6,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidchallenge.core.ResultType
 import com.example.androidchallenge.data.failure.RegisterFailure
-import com.example.androidchallenge.data.repository.UserRepositoryImpl
+import com.example.androidchallenge.data.repository.interfaces.UserRepository
 import com.example.androidchallenge.ui.util.Validators.isEmailValid
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class RegisterViewModel : ViewModel() {
-
-    private val userRepository =
-        UserRepositoryImpl(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+@HiltViewModel
+class RegisterViewModel @Inject constructor(private val userRepository: UserRepository) :
+    ViewModel() {
 
     private val _isLoading = mutableStateOf(false)
     val isLoading: State<Boolean> = _isLoading
@@ -51,13 +50,12 @@ class RegisterViewModel : ViewModel() {
     fun register() {
         viewModelScope.launch {
             _isLoading.value = true
-            when (val result =
-                withContext(Dispatchers.IO) {
-                    userRepository.register(
-                        _username.value,
-                        _password.value
-                    )
-                }) {
+            when (val result = withContext(Dispatchers.IO) {
+                userRepository.register(
+                    _username.value,
+                    _password.value
+                )
+            }) {
                 is ResultType.Error -> {
                     _isLoading.value = false
                     when (result.error) {
@@ -71,7 +69,7 @@ class RegisterViewModel : ViewModel() {
                 }
                 is ResultType.Success -> {
                     _isLoading.value = false
-                    eventChannel.send(RegisterEvent.NavigateHome)
+                    eventChannel.send(RegisterEvent.NavigateHome(result.data.userId))
                 }
             }
         }

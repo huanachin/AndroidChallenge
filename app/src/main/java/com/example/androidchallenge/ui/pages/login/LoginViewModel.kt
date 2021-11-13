@@ -6,19 +6,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidchallenge.core.ResultType
 import com.example.androidchallenge.data.failure.LoginFailure
-import com.example.androidchallenge.data.repository.UserRepositoryImpl
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.androidchallenge.data.repository.interfaces.UserRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
-class LoginViewModel : ViewModel() {
-
-    private val userRepository =
-        UserRepositoryImpl(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
+@HiltViewModel
+class LoginViewModel @Inject constructor(private val userRepository: UserRepository) : ViewModel() {
 
     private val _isLoading = mutableStateOf(false)
     val isLoading: State<Boolean> = _isLoading
@@ -41,13 +39,12 @@ class LoginViewModel : ViewModel() {
     fun authenticate() {
         viewModelScope.launch {
             _isLoading.value = true
-            when (val result =
-                withContext(Dispatchers.IO) {
-                    userRepository.authenticate(
-                        _username.value,
-                        _password.value
-                    )
-                }) {
+            when (val result = withContext(Dispatchers.IO) {
+                userRepository.authenticate(
+                    _username.value,
+                    _password.value
+                )
+            }) {
                 is ResultType.Error -> {
                     _isLoading.value = false
                     when (result.error) {
@@ -61,7 +58,7 @@ class LoginViewModel : ViewModel() {
                 }
                 is ResultType.Success -> {
                     _isLoading.value = false
-                    eventChannel.send(LoginEvent.NavigateHome)
+                    eventChannel.send(LoginEvent.NavigateHome(result.data.userId))
                 }
             }
         }

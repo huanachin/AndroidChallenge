@@ -13,7 +13,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 
-class UserRepositoryImpl(
+class UserRepositoryImpl @Inject constructor(
     private val firebaseAuth: FirebaseAuth,
     private val firebaseFirestore: FirebaseFirestore
 ) : UserRepository {
@@ -24,7 +24,8 @@ class UserRepositoryImpl(
     ): ResultType<UserModel, LoginFailure> {
         try {
             val authResult = firebaseAuth.signInWithEmailAndPassword(username, password).await()
-            val user = authResult?.user ?: return ResultType.Error(LoginFailure.ServerFailure)
+            val user =
+                authResult?.user ?: return ResultType.Error(LoginFailure.ServerFailure)
             return ResultType.Success(UserModel(user.uid))
         } catch (e: FirebaseAuthInvalidCredentialsException) {
             return ResultType.Error(LoginFailure.WrongEmailPasswordFailure)
@@ -39,8 +40,10 @@ class UserRepositoryImpl(
     ): ResultType<UserModel, RegisterFailure> {
         try {
             val authResult = firebaseAuth.createUserWithEmailAndPassword(username, password).await()
-            val user = authResult?.user ?: return ResultType.Error(RegisterFailure.ServerFailure)
-            firebaseFirestore.collection(USER_COLLECTION).document(user.uid).set(UserModel())
+            val user = authResult?.user
+                ?: return ResultType.Error(RegisterFailure.ServerFailure)
+            firebaseFirestore.collection(USER_COLLECTION).document(user.uid)
+                .set(UserModel(user.uid))
                 .await()
             return ResultType.Success(UserModel(user.uid))
         } catch (e: FirebaseAuthInvalidCredentialsException) {
@@ -51,12 +54,14 @@ class UserRepositoryImpl(
     }
 
     override suspend fun getCurrentUser(): ResultType<UserModel, CurrentUserFailure> {
-        try {
+        return try {
             val user =
-                firebaseAuth.currentUser ?: return ResultType.Error(CurrentUserFailure.UserNotFound)
-            return ResultType.Success(UserModel(user.uid))
+                firebaseAuth.currentUser ?: return ResultType.Error(
+                    CurrentUserFailure.UserNotFound
+                )
+            ResultType.Success(UserModel(user.uid))
         } catch (e: Exception) {
-            return ResultType.Error(CurrentUserFailure.ServerFailure)
+            ResultType.Error(CurrentUserFailure.ServerFailure)
         }
     }
 

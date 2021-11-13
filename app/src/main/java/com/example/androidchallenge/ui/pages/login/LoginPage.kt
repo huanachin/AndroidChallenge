@@ -17,9 +17,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navOptions
 import com.example.androidchallenge.R
 import com.example.androidchallenge.ui.custom.ErrorPasswordTextField
 import com.example.androidchallenge.ui.custom.ErrorTextField
@@ -47,7 +49,7 @@ fun LoadingPreview() {
 @Composable
 fun LoginPage(
     navController: NavController,
-    viewModel: LoginViewModel = viewModel()
+    viewModel: LoginViewModel = hiltViewModel()
 ) {
 
     val state = viewModel.eventsFlow.collectAsState(initial = null)
@@ -64,7 +66,7 @@ fun LoginPage(
     LaunchedEffect(event) {
         when (event) {
             is LoginEvent.NavigateHome -> {
-                navController.navigate(Screen.HomeScreen.route) {
+                navController.navigate("${Screen.HomeScreen.route}/${event.userId}") {
                     popUpTo(Screen.LoginScreen.route) { inclusive = true }
                 }
             }

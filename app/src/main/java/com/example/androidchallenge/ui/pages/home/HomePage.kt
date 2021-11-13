@@ -1,5 +1,6 @@
 package com.example.androidchallenge.ui.pages.home
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,26 +19,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.androidchallenge.R
 import com.example.androidchallenge.data.model.TaskModel
 import com.example.androidchallenge.ui.custom.LoadingComponent
 import com.example.androidchallenge.ui.navigation.Screen
-import com.example.androidchallenge.ui.pages.task.TaskPage
-import com.example.androidchallenge.ui.pages.task.TaskViewModel
 import com.example.androidchallenge.ui.theme.AndroidChallengeTheme
+import com.example.androidchallenge.ui.util.Constants.TASK
+import com.example.androidchallenge.ui.util.parseModel
+import com.google.gson.Gson
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import java.net.URLEncoder
 
 @ExperimentalCoroutinesApi
 @Preview(showBackground = true, widthDp = 400, heightDp = 800)
 @Composable
 fun HomePreview() {
     AndroidChallengeTheme {
-        HomePage(rememberNavController())
+        HomePage(navController = rememberNavController(), userId = "")
     }
 }
 
@@ -54,11 +55,11 @@ fun DropDownPreview() {
 
 @ExperimentalCoroutinesApi
 @Composable
-fun HomePage(navController: NavController, viewModel: HomeViewModel = viewModel()) {
-
-
-    val openAddTaskDialog =
-        remember { mutableStateOf<Pair<Boolean, TaskModel?>>(Pair(false, null)) }
+fun HomePage(
+    navController: NavController,
+    userId: String,
+    viewModel: HomeViewModel = hiltViewModel()
+) {
 
     val state = viewModel.eventsFlow.collectAsState(initial = null)
     val event = state.value
@@ -66,10 +67,10 @@ fun HomePage(navController: NavController, viewModel: HomeViewModel = viewModel(
     LaunchedEffect(event) {
         when (event) {
             HomeEvent.ShowDeleteTaskError -> {
-                openAddTaskDialog.value = Pair(false, null)
+
             }
             HomeEvent.ShowDeleteTaskSuccess -> {
-                openAddTaskDialog.value = Pair(false, null)
+
             }
         }
     }
@@ -79,7 +80,8 @@ fun HomePage(navController: NavController, viewModel: HomeViewModel = viewModel(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    openAddTaskDialog.value = Pair(true, null)
+                    navController.currentBackStackEntry?.arguments?.putParcelable(TASK, null)
+                    navController.navigate("${Screen.TaskDialog.route}/$userId")
                 },
                 backgroundColor = Color.Gray
             ) {
@@ -130,26 +132,13 @@ fun HomePage(navController: NavController, viewModel: HomeViewModel = viewModel(
                                 viewModel.deleteTask(id)
                             }
                         }, onEdit = {
-                            openAddTaskDialog.value = Pair(true, it)
+                            val taskEncoded = it.parseModel()
+                            navController.navigate("${Screen.TaskDialog.route}/$userId?$TASK=$taskEncoded")
                         })
                 }
             }
         }
         LoadingComponent(viewModel.isLoading.value)
-
-        if (openAddTaskDialog.value.first) {
-            Dialog(
-                onDismissRequest = { openAddTaskDialog.value = Pair(false, null) },
-                DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = false)
-            ) {
-                TaskPage(
-                    viewModel = TaskViewModel(openAddTaskDialog.value.second),
-                    task = openAddTaskDialog.value.second,
-                    onCloseDialog = {
-                        openAddTaskDialog.value = Pair(false, null)
-                    })
-            }
-        }
     }
 }
 

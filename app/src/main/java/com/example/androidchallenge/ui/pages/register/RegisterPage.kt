@@ -16,7 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.androidchallenge.R
@@ -35,7 +35,7 @@ fun RegisterPreview() {
 }
 
 @Composable
-fun RegisterPage(navController: NavController, viewModel: RegisterViewModel = viewModel()) {
+fun RegisterPage(navController: NavController, viewModel: RegisterViewModel = hiltViewModel()) {
 
     val state = viewModel.eventsFlow.collectAsState(initial = null)
     val event = state.value
@@ -47,7 +47,7 @@ fun RegisterPage(navController: NavController, viewModel: RegisterViewModel = vi
     LaunchedEffect(event) {
         when (event) {
             is RegisterEvent.NavigateHome -> {
-                navController.navigate(Screen.HomeScreen.route) {
+                navController.navigate("${Screen.HomeScreen.route}/${event.userId}") {
                     popUpTo(Screen.RegisterScreen.route) { inclusive = true }
                 }
             }

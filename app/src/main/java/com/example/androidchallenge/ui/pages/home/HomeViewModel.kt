@@ -4,14 +4,20 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidchallenge.core.ResultType
 import com.example.androidchallenge.data.model.TaskModel
 import com.example.androidchallenge.data.repository.TaskRepositoryImpl
 import com.example.androidchallenge.data.repository.UserRepositoryImpl
+import com.example.androidchallenge.data.repository.interfaces.TaskRepository
+import com.example.androidchallenge.data.repository.interfaces.UserRepository
+import com.example.androidchallenge.ui.util.Constants.USER_ID
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -19,13 +25,15 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 @ExperimentalCoroutinesApi
-class HomeViewModel : ViewModel() {
-
-    private val userRepository =
-        UserRepositoryImpl(FirebaseAuth.getInstance(), FirebaseFirestore.getInstance())
-    private val taskRepository = TaskRepositoryImpl(FirebaseFirestore.getInstance())
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
+    private val userRepository:UserRepository,
+    private val taskRepository: TaskRepository,
+) : ViewModel() {
 
     private val _isLoading = mutableStateOf(false)
     val isLoading: State<Boolean> = _isLoading
@@ -40,34 +48,22 @@ class HomeViewModel : ViewModel() {
         getTasks()
     }
 
-    fun logout() {
-        userRepository.logout()
-    }
-
     fun deleteTask(taskId: String) {
-        viewModelScope.launch {
-            _isLoading.value = false
-            when (val userResult =
-                withContext(Dispatchers.IO) { (userRepository.getCurrentUser()) }) {
-                is ResultType.Error -> {
-                    _isLoading.value = false
-                    eventChannel.send(HomeEvent.ShowDeleteTaskError)
-                }
-                is ResultType.Success -> {
-                    userResult.data.uuid?.let { uuid ->
-                        when (withContext(Dispatchers.IO) {
-                            taskRepository.deleteTaskUser(uuid, taskId)
-                        }) {
-                            is ResultType.Error -> {
-                                _isLoading.value = false
-                                eventChannel.send(HomeEvent.ShowDeleteTaskError)
-                            }
-                            is ResultType.Success -> {
-                                _isLoading.value = false
-                                eventChannel.send(HomeEvent.ShowDeleteTaskSuccess)
-                            }
-                        }
-
+        savedStateHandle.get<String>(USER_ID)?.let { userId ->
+            viewModelScope.launch {
+                when (withContext(Dispatchers.IO) {
+                    taskRepository.deleteTaskUser(
+                        userId,
+                        taskId
+                    )
+                }) {
+                    is ResultType.Error -> {
+                        _isLoading.value = false
+                        eventChannel.send(HomeEvent.ShowDeleteTaskError)
+                    }
+                    is ResultType.Success -> {
+                        _isLoading.value = false
+                        eventChannel.send(HomeEvent.ShowDeleteTaskSuccess)
                     }
                 }
             }
@@ -75,29 +71,24 @@ class HomeViewModel : ViewModel() {
     }
 
     private fun getTasks() {
-        viewModelScope.launch {
-            when (val userResult =
-                withContext(Dispatchers.IO) { (userRepository.getCurrentUser()) }) {
-                is ResultType.Error -> {
-                }
-                is ResultType.Success -> {
-                    withContext(Dispatchers.IO) {
-                        userResult.data.uuid?.let { uuid ->
-                            taskRepository.getTaskByUser(uuid).collect {
-                                when (it) {
-                                    is ResultType.Error -> {
-                                    }
-                                    is ResultType.Success -> {
-                                        _tasks.clear()
-                                        _tasks.addAll(it.data)
-                                    }
-                                }
-                            }
+        savedStateHandle.get<String>(USER_ID)?.let { userId ->
+            viewModelScope.launch {
+                withContext(Dispatchers.IO) { taskRepository.getTaskByUser(userId) }.collect { result ->
+                    when (result) {
+                        is ResultType.Error -> {
                         }
-
+                        is ResultType.Success -> {
+                            _tasks.clear()
+                            _tasks.addAll(result.data)
+                        }
                     }
                 }
             }
         }
     }
+
+    fun logout() {
+        userRepository.logout()
+    }
+
 }

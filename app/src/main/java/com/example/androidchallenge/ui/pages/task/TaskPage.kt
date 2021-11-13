@@ -1,17 +1,21 @@
 package com.example.androidchallenge.ui.pages.task
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -23,10 +27,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import coil.compose.rememberImagePainter
 import com.example.androidchallenge.R
-import com.example.androidchallenge.data.model.TaskModel
+import com.example.androidchallenge.ui.custom.LoadingComponent
 import com.example.androidchallenge.ui.custom.NormalTextField
 import com.example.androidchallenge.ui.theme.AndroidChallengeTheme
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,26 +43,40 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 @Composable
 fun TaskPreview() {
     AndroidChallengeTheme {
-        TaskPage(onCloseDialog = {})
-    }
-}
-
-@Preview(showBackground = true, widthDp = 400)
-@Composable
-fun ImageBoxPreview() {
-    AndroidChallengeTheme {
-        ImagesBox((1..2).map { "https://lorempixel.com/400/400/people/$it/" })
+        TaskPage(navController = rememberNavController())
     }
 }
 
 @ExperimentalCoroutinesApi
 @Composable
 fun TaskPage(
-    viewModel: TaskViewModel = viewModel(),
-    task: TaskModel? = null,
-    onCloseDialog: () -> Unit
+    navController: NavController,
+    viewModel: TaskViewModel = hiltViewModel()
 ) {
 
+    val state = viewModel.eventsFlow.collectAsState(initial = null)
+    val event = state.value
+
+    LaunchedEffect(event) {
+        when (event) {
+            is TaskEvent.NavigateBack -> {
+                navController.navigateUp()
+            }
+            is TaskEvent.ShowError -> {
+
+            }
+        }
+    }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract =
+        ActivityResultContracts.GetContent()
+
+    ) {
+        it?.let { uri ->
+            viewModel.addImage(TaskImage.TaskImageLocal(uri))
+        }
+    }
 
     Box(Modifier.background(color = Color.White)) {
         Column(
@@ -68,7 +88,7 @@ fun TaskPage(
                 modifier = Modifier
                     .align(Alignment.End)
                     .clickable {
-                        onCloseDialog()
+                        navController.navigateUp()
                     },
                 imageVector = Icons.Filled.Cancel,
                 contentDescription = null,
@@ -87,26 +107,20 @@ fun TaskPage(
                 onTextChanged = { viewModel.onDescriptionChanged(it) }
             )
             Spacer(Modifier.height(16.dp))
-            ImagesBox(emptyList())
+            Box(Modifier.height(300.dp)) {
+                ImagesBox(
+                    images = viewModel.images,
+                    onAdd = { launcher.launch("image/*") },
+                    onDelete = { viewModel.removeImage(it) }
+                )
+            }
             Spacer(Modifier.height(16.dp))
             SaveButton(
                 enabled = viewModel.isEnabled.value,
-                onSave = {
-                    if (task == null) {
-                        viewModel.addTask(
-                            onAddTaskError = onCloseDialog,
-                            onAddTaskSuccess = onCloseDialog
-                        )
-                    } else {
-                        viewModel.updateTask(
-                            task = task,
-                            onEditTaskError = onCloseDialog,
-                            onEditTaskSuccess = onCloseDialog
-                        )
-                    }
-                })
+                onSave = { viewModel.onSave() })
         }
     }
+    LoadingComponent(viewModel.isLoading.value)
 }
 
 @Composable
@@ -132,43 +146,55 @@ fun SaveButton(enabled: Boolean = false, onSave: () -> Unit) {
 }
 
 @Composable
-fun ImagesBox(images: List<String>) {
+fun ImagesBox(images: List<TaskImage>, onAdd: () -> Unit, onDelete: (Int) -> Unit) {
     if (images.isNotEmpty()) {
-        Column {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(images) {
-                    Box(
-                        Modifier
-                            .height(200.dp)
-                            .fillMaxWidth()
-                    ) {
-                        Icon(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(8.dp),
-                            imageVector = Icons.Filled.Cancel,
-                            contentDescription = null,
-                            tint = Color.White
-                        )
-                        Image(
-                            modifier = Modifier.fillMaxSize(),
-                            painter = rememberImagePainter(it),
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop
-                        )
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            itemsIndexed(images) { index, task ->
+                Box(
+                    Modifier
+                        .height(200.dp)
+                        .fillMaxWidth()
+                ) {
+
+                    val painter = when (task) {
+                        is TaskImage.TaskImageLocal -> rememberImagePainter(data = task.uri)
+                        is TaskImage.TaskImageNetwork -> rememberImagePainter(data = task.url)
                     }
+
+                    Image(
+                        modifier = Modifier.fillMaxSize(),
+                        painter = painter,
+                        contentDescription = null,
+                        contentScale = ContentScale.Fit
+                    )
+                    Icon(
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                            .clickable {
+                                onDelete(index)
+                            },
+                        imageVector = Icons.Filled.Cancel,
+                        contentDescription = null,
+                        tint = Color.Black
+                    )
+
                 }
             }
-            Spacer(Modifier.height(8.dp))
-            AddImageBox(height = 100.dp)
+            item {
+                Spacer(Modifier.height(8.dp))
+                AddImageBox(height = 100.dp, onAdd = onAdd)
+            }
         }
     } else {
-        AddImageBox()
+        AddImageBox(height = 300.dp, onAdd = onAdd)
     }
+
 }
 
 @Composable
-fun AddImageBox(height: Dp = 200.dp) {
+fun AddImageBox(height: Dp = 200.dp, onAdd: () -> Unit) {
+
     val stroke = Stroke(
         width = 2f,
         pathEffect = PathEffect.dashPathEffect(floatArrayOf(20f, 20f), 0f)
@@ -181,7 +207,12 @@ fun AddImageBox(height: Dp = 200.dp) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             drawRoundRect(color = Color.LightGray, style = stroke)
         }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.clickable {
+                onAdd()
+            }
+        ) {
             Icon(
                 modifier = Modifier.size(40.dp),
                 imageVector = Icons.Default.Image,

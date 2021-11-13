@@ -8,12 +8,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.androidchallenge.ui.navigation.Screen
 
 @Composable
-fun SplashPage(navController: NavController, viewModel: SplashViewModel = viewModel()) {
+fun SplashPage(navController: NavController, viewModel: SplashViewModel = hiltViewModel()) {
 
     val state = viewModel.eventsFlow.collectAsState(initial = null)
     val event = state.value
@@ -21,13 +22,13 @@ fun SplashPage(navController: NavController, viewModel: SplashViewModel = viewMo
     LaunchedEffect(event) {
         when (event) {
             is SplashEvent.NavigateHome -> {
-                navController.navigate(Screen.HomeScreen.route) {
-                    popUpTo(Screen.SplashScreen.route) { inclusive = true }
+                navController.navigate("${Screen.HomeScreen.route}/${event.userId}") {
+                    popUpTo(Screen.DecisionScreen.route) { inclusive = true }
                 }
             }
             is SplashEvent.NavigateLogin -> {
                 navController.navigate(Screen.LoginScreen.route) {
-                    popUpTo(Screen.SplashScreen.route) { inclusive = true }
+                    popUpTo(Screen.DecisionScreen.route) { inclusive = true }
                 }
             }
         }
