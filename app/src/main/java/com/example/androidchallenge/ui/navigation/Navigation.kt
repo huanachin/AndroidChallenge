@@ -7,29 +7,29 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.navigation.navDeepLink
 import com.example.androidchallenge.ui.pages.home.HomePage
 import com.example.androidchallenge.ui.pages.login.LoginPage
 import com.example.androidchallenge.ui.pages.register.RegisterPage
 import com.example.androidchallenge.ui.pages.splash.SplashPage
 import com.example.androidchallenge.ui.pages.task.TaskPage
 import com.example.androidchallenge.ui.util.Constants.TASK
+import com.example.androidchallenge.ui.util.Constants.TASK_ID
 import com.example.androidchallenge.ui.util.Constants.USER_ID
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @ExperimentalCoroutinesApi
 @Composable
-fun Navigation() {
+fun Navigation(taskId: String?) {
 
     val navController = rememberNavController()
 
     NavHost(navController = navController, startDestination = Screen.DecisionScreen.route) {
         composable(
-            route = Screen.DecisionScreen.route,
-            deepLinks = listOf(navDeepLink {
-                uriPattern = "http://androidchallenge.com/task?params={$TASK}"
-            })
-        ) { SplashPage(navController = navController) }
+            route = Screen.DecisionScreen.route
+        ) {
+            it.arguments?.putString(TASK_ID, taskId)
+            SplashPage(navController = navController)
+        }
         composable(route = Screen.RegisterScreen.route) { RegisterPage(navController = navController) }
         composable(
             route = "${Screen.HomeScreen.route}/{$USER_ID}",
@@ -44,7 +44,11 @@ fun Navigation() {
             route = "${Screen.TaskDialog.route}/{$USER_ID}?$TASK={$TASK}",
             arguments = listOf(
                 navArgument(USER_ID) { type = NavType.StringType },
-                navArgument(TASK) { type = TaskParamType() }
+                navArgument(TASK) {
+                    type = TaskParamType()
+                    defaultValue = null
+                    nullable = true
+                }
             )
         ) {
             TaskPage(

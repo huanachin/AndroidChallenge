@@ -4,8 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidchallenge.core.ResultType
-import com.example.androidchallenge.data.model.TaskModel
 import com.example.androidchallenge.data.repository.interfaces.UserRepository
+import com.example.androidchallenge.ui.util.Constants.TASK_ID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -25,10 +25,11 @@ class SplashViewModel @Inject constructor(
     val eventsFlow = eventChannel.receiveAsFlow()
 
     init {
-        validateUser()
+        val params = savedStateHandle.get<String>(TASK_ID)
+        validateUser(params)
     }
 
-    private fun validateUser() {
+    private fun validateUser(params: String?) {
         viewModelScope.launch {
             when (val result =
                 withContext(Dispatchers.IO) {
@@ -38,7 +39,7 @@ class SplashViewModel @Inject constructor(
                     eventChannel.send(SplashEvent.NavigateLogin)
                 }
                 is ResultType.Success -> {
-                    eventChannel.send(SplashEvent.NavigateHome(result.data.userId))
+                    eventChannel.send(SplashEvent.NavigateHome(result.data.userId, params))
                 }
             }
         }

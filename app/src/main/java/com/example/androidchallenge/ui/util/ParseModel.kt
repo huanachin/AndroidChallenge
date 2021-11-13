@@ -7,6 +7,10 @@ fun <T> T.parseModel(): String {
     return URLEncoder.encode(Gson().toJson(this), "utf-8")
 }
 
-inline fun <reified T> String.extractModel(): T {
-    return Gson().fromJson(this, T::class.java)
+inline fun <reified T> String.extractModel(): T? {
+    return try {
+        Gson().fromJson(this, T::class.java)
+    } catch (e: Exception) {
+        null
+    }
 }

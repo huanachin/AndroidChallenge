@@ -9,14 +9,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidchallenge.core.ResultType
 import com.example.androidchallenge.data.model.TaskModel
-import com.example.androidchallenge.data.repository.TaskRepositoryImpl
-import com.example.androidchallenge.data.repository.UserRepositoryImpl
 import com.example.androidchallenge.data.repository.interfaces.TaskRepository
 import com.example.androidchallenge.data.repository.interfaces.UserRepository
+import com.example.androidchallenge.ui.util.Constants.TASK_ID
 import com.example.androidchallenge.ui.util.Constants.USER_ID
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -31,7 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    private val userRepository:UserRepository,
+    private val userRepository: UserRepository,
     private val taskRepository: TaskRepository,
 ) : ViewModel() {
 
@@ -46,6 +42,13 @@ class HomeViewModel @Inject constructor(
 
     init {
         getTasks()
+        addPendingTask()
+    }
+
+    private fun addPendingTask() {
+        savedStateHandle.get<String>(TASK_ID)?.let {
+
+        }
     }
 
     fun deleteTask(taskId: String) {

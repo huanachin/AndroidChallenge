@@ -1,6 +1,5 @@
 package com.example.androidchallenge.ui.pages.home
 
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,9 +28,7 @@ import com.example.androidchallenge.ui.navigation.Screen
 import com.example.androidchallenge.ui.theme.AndroidChallengeTheme
 import com.example.androidchallenge.ui.util.Constants.TASK
 import com.example.androidchallenge.ui.util.parseModel
-import com.google.gson.Gson
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import java.net.URLEncoder
 
 @ExperimentalCoroutinesApi
 @Preview(showBackground = true, widthDp = 400, heightDp = 800)
@@ -67,10 +64,12 @@ fun HomePage(
     LaunchedEffect(event) {
         when (event) {
             HomeEvent.ShowDeleteTaskError -> {
-
             }
             HomeEvent.ShowDeleteTaskSuccess -> {
-
+            }
+            HomeEvent.ShowAddTaskError -> {
+            }
+            HomeEvent.ShowAddTaskSuccess -> {
             }
         }
     }
@@ -80,7 +79,6 @@ fun HomePage(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = {
-                    navController.currentBackStackEntry?.arguments?.putParcelable(TASK, null)
                     navController.navigate("${Screen.TaskDialog.route}/$userId")
                 },
                 backgroundColor = Color.Gray
