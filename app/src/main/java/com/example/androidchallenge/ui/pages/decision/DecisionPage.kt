@@ -1,4 +1,4 @@
-package com.example.androidchallenge.ui.pages.splash
+package com.example.androidchallenge.ui.pages.decision
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,21 +11,30 @@ import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.androidchallenge.ui.navigation.Screen
+import com.example.androidchallenge.ui.util.Constants.PARAMS
+import com.example.androidchallenge.ui.util.encode
+import com.example.androidchallenge.ui.util.parseModel
 
 @Composable
-fun SplashPage(navController: NavController, viewModel: SplashViewModel = hiltViewModel()) {
+fun DecisionPage(
+    navController: NavController,
+    params: String? = null,
+    viewModel: DecisionViewModel = hiltViewModel()
+) {
 
     val state = viewModel.eventsFlow.collectAsState(initial = null)
     val event = state.value
 
     LaunchedEffect(event) {
         when (event) {
-            is SplashEvent.NavigateHome -> {
-                navController.navigate("${Screen.HomeScreen.route}/${event.userId}") {
+            is DecisionEvent.NavigateHome -> {
+                val route = if (params == null) "${Screen.HomeScreen.route}/${event.userId}"
+                else "${Screen.HomeScreen.route}/${event.userId}?$PARAMS=${params.encode()}"
+                navController.navigate(route) {
                     popUpTo(Screen.DecisionScreen.route) { inclusive = true }
                 }
             }
-            is SplashEvent.NavigateLogin -> {
+            is DecisionEvent.NavigateLogin -> {
                 navController.navigate(Screen.LoginScreen.route) {
                     popUpTo(Screen.DecisionScreen.route) { inclusive = true }
                 }

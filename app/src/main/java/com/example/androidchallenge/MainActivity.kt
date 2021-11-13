@@ -5,7 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.example.androidchallenge.ui.navigation.Navigation
 import com.example.androidchallenge.ui.theme.AndroidChallengeTheme
-import com.example.androidchallenge.ui.util.Constants.TASK_ID
+import com.example.androidchallenge.ui.util.Constants.PARAMS
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
@@ -16,9 +16,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val taskId = intent.data?.getQueryParameter(TASK_ID)
+            val params = intent.data?.getQueryParameter(PARAMS)
             AndroidChallengeTheme {
-                Navigation(taskId)
+                Navigation(params)
             }
         }
     }

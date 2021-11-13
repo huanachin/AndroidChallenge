@@ -4,6 +4,8 @@ import android.net.Uri
 import com.example.androidchallenge.core.ResultType
 import com.example.androidchallenge.data.AppConfig.TASK_COLLECTION
 import com.example.androidchallenge.data.AppConfig.USER_COLLECTION
+import com.example.androidchallenge.data.failure.CopyTaskFailure
+import com.example.androidchallenge.data.model.DeepLinkTaskModel
 import com.example.androidchallenge.data.model.ErrorDataModel
 import com.example.androidchallenge.data.model.TaskModel
 import com.example.androidchallenge.data.repository.interfaces.TaskRepository
@@ -140,11 +142,11 @@ class TaskRepositoryImpl @Inject constructor(
         taskId: String
     ): ResultType<Unit, Exception> {
         return try {
-            val taskReference =
+            val taskRef =
                 firebaseFirestore.collection(USER_COLLECTION).document(userId)
                     .collection(TASK_COLLECTION)
                     .document(taskId)
-            val taskSnapshot = taskReference.get().await()
+            val taskSnapshot = taskRef.get().await()
             val task = taskSnapshot.toObject(TaskModel::class.java)
             task?.images?.forEach { url ->
                 when (removeImage(url)) {
@@ -154,10 +156,32 @@ class TaskRepositoryImpl @Inject constructor(
                     }
                 }
             }
-            taskReference.delete().await()
+            taskRef.delete().await()
             ResultType.Success(Unit)
         } catch (e: Exception) {
             ResultType.Error(e)
+        }
+    }
+
+    override suspend fun copyTask(
+        deepLinkTask: DeepLinkTaskModel,
+        userId: String
+    ): ResultType<String, CopyTaskFailure> {
+        try {
+            val taskRef =
+                firebaseFirestore.collection(USER_COLLECTION).document(deepLinkTask.userId)
+                    .collection(TASK_COLLECTION).document(deepLinkTask.taskId)
+            val taskSnapshot = taskRef.get().await()
+            val task = taskSnapshot.toObject(TaskModel::class.java)
+                ?: return ResultType.Error(CopyTaskFailure.TaskNotFound)
+            val newTask = task.copy(images = emptyList())
+            val newTaskRef =
+                firebaseFirestore.collection(USER_COLLECTION).document(userId).collection(
+                    TASK_COLLECTION
+                ).add(newTask).await()
+            return ResultType.Success(newTaskRef.id)
+        } catch (e: Exception) {
+            return ResultType.Error(CopyTaskFailure.ServerFailure)
         }
     }
 

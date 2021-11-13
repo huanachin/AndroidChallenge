@@ -1,11 +1,10 @@
-package com.example.androidchallenge.ui.pages.splash
+package com.example.androidchallenge.ui.pages.decision
 
-import androidx.lifecycle.SavedStateHandle
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidchallenge.core.ResultType
 import com.example.androidchallenge.data.repository.interfaces.UserRepository
-import com.example.androidchallenge.ui.util.Constants.TASK_ID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -15,31 +14,31 @@ import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
-class SplashViewModel @Inject constructor(
-    private val savedStateHandle: SavedStateHandle,
+class DecisionViewModel @Inject constructor(
     private val userRepository: UserRepository
 ) :
     ViewModel() {
 
-    private val eventChannel = Channel<SplashEvent>(Channel.BUFFERED)
+
+    private val eventChannel = Channel<DecisionEvent>(Channel.BUFFERED)
     val eventsFlow = eventChannel.receiveAsFlow()
 
     init {
-        val params = savedStateHandle.get<String>(TASK_ID)
-        validateUser(params)
+        validateUser()
     }
 
-    private fun validateUser(params: String?) {
+    private fun validateUser() {
+        val uri: Uri = Uri.EMPTY
         viewModelScope.launch {
             when (val result =
                 withContext(Dispatchers.IO) {
                     userRepository.getCurrentUser()
                 }) {
                 is ResultType.Error -> {
-                    eventChannel.send(SplashEvent.NavigateLogin)
+                    eventChannel.send(DecisionEvent.NavigateLogin)
                 }
                 is ResultType.Success -> {
-                    eventChannel.send(SplashEvent.NavigateHome(result.data.userId, params))
+                    eventChannel.send(DecisionEvent.NavigateHome(result.data.userId))
                 }
             }
         }

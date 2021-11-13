@@ -2,6 +2,8 @@ package com.example.androidchallenge.data.repository.interfaces
 
 import android.net.Uri
 import com.example.androidchallenge.core.ResultType
+import com.example.androidchallenge.data.failure.CopyTaskFailure
+import com.example.androidchallenge.data.model.DeepLinkTaskModel
 import com.example.androidchallenge.data.model.ErrorDataModel
 import com.example.androidchallenge.data.model.TaskModel
 import com.example.androidchallenge.ui.pages.task.TaskImage
@@ -26,5 +28,12 @@ interface TaskRepository {
 
     suspend fun deleteTaskUser(userId: String, taskId: String): ResultType<Unit, Exception>
 
+    suspend fun copyTask(
+        deepLinkTask: DeepLinkTaskModel,
+        userId: String
+    ): ResultType<String, CopyTaskFailure>
+
     suspend fun getImageUrls(imagesPath: List<String>): ResultType<List<TaskImage.TaskImageNetwork>, Exception>
+
+
 }

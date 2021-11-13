@@ -8,10 +8,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.androidchallenge.core.ResultType
+import com.example.androidchallenge.data.model.DeepLinkTaskModel
 import com.example.androidchallenge.data.model.TaskModel
 import com.example.androidchallenge.data.repository.interfaces.TaskRepository
 import com.example.androidchallenge.data.repository.interfaces.UserRepository
-import com.example.androidchallenge.ui.util.Constants.TASK_ID
+import com.example.androidchallenge.ui.util.Constants.PARAMS
 import com.example.androidchallenge.ui.util.Constants.USER_ID
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +32,8 @@ class HomeViewModel @Inject constructor(
     private val taskRepository: TaskRepository,
 ) : ViewModel() {
 
+    private var deepLinkProcessed = false
+
     private val _isLoading = mutableStateOf(false)
     val isLoading: State<Boolean> = _isLoading
 
@@ -46,8 +49,30 @@ class HomeViewModel @Inject constructor(
     }
 
     private fun addPendingTask() {
-        savedStateHandle.get<String>(TASK_ID)?.let {
-
+        if (!deepLinkProcessed) {
+            val deepLinkTask =
+                savedStateHandle.get<DeepLinkTaskModel>(PARAMS)
+            val userId = savedStateHandle.get<String>(USER_ID)
+            if (deepLinkTask != null && userId != null) {
+                _isLoading.value = true
+                viewModelScope.launch {
+                    val copyResult = withContext(Dispatchers.IO) {
+                        taskRepository.copyTask(
+                            deepLinkTask = deepLinkTask,
+                            userId = userId
+                        )
+                    }
+                    when (copyResult) {
+                        is ResultType.Error -> {
+                            _isLoading.value = false
+                        }
+                        is ResultType.Success -> {
+                            _isLoading.value = false
+                            deepLinkProcessed = true
+                        }
+                    }
+                }
+            }
         }
     }
 

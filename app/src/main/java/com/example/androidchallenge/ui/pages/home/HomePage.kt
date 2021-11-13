@@ -1,6 +1,9 @@
 package com.example.androidchallenge.ui.pages.home
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -22,12 +26,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.androidchallenge.R
+import com.example.androidchallenge.data.model.DeepLinkTaskModel
 import com.example.androidchallenge.data.model.TaskModel
 import com.example.androidchallenge.ui.custom.LoadingComponent
 import com.example.androidchallenge.ui.navigation.Screen
 import com.example.androidchallenge.ui.theme.AndroidChallengeTheme
 import com.example.androidchallenge.ui.util.Constants.TASK
 import com.example.androidchallenge.ui.util.parseModel
+import com.google.firebase.dynamiclinks.DynamicLink
+import com.google.firebase.dynamiclinks.ktx.dynamicLinks
+import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @ExperimentalCoroutinesApi
@@ -58,18 +66,22 @@ fun HomePage(
     viewModel: HomeViewModel = hiltViewModel()
 ) {
 
+    val context = LocalContext.current
+
     val state = viewModel.eventsFlow.collectAsState(initial = null)
     val event = state.value
 
     LaunchedEffect(event) {
         when (event) {
             HomeEvent.ShowDeleteTaskError -> {
+
             }
             HomeEvent.ShowDeleteTaskSuccess -> {
             }
             HomeEvent.ShowAddTaskError -> {
             }
             HomeEvent.ShowAddTaskSuccess -> {
+
             }
         }
     }
@@ -123,7 +135,36 @@ fun HomePage(
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(viewModel.tasks) {
                     TaskItem(task = it,
+                        onShow ={
+                            val taskEncoded = it.parseModel()
+                            navController.navigate("${Screen.TaskDialog.route}/$userId?$TASK=$taskEncoded")
+                        },
                         onShare = {
+                            it.id?.let { taskId ->
+                                val deepLinkTask =
+                                    DeepLinkTaskModel(userId = userId, taskId = taskId)
+                                Firebase.dynamicLinks.createDynamicLink()
+                                    .setLink(Uri.parse("http://androidchallenge/task?params=${deepLinkTask.parseModel()}"))
+                                    .setDomainUriPrefix("http://androidchallenge.page.link")
+                                    .setAndroidParameters(
+                                        DynamicLink.AndroidParameters.Builder("com.example.androidchallenge")
+                                            .setMinimumVersion(1)
+                                            .build()
+                                    )
+                                    .buildShortDynamicLink()
+                                    .addOnCompleteListener { task ->
+                                        if (task.isSuccessful) {
+                                            context.startActivity(Intent.createChooser(Intent().apply {
+                                                action = Intent.ACTION_SEND
+                                                putExtra(
+                                                    Intent.EXTRA_TEXT,
+                                                    task.result.shortLink.toString()
+                                                )
+                                                type = "text/plain"
+                                            }, null))
+                                        }
+                                    }
+                            }
 
                         }, onDelete = {
                             it.id?.let { id ->
@@ -143,6 +184,7 @@ fun HomePage(
 @Composable
 fun TaskItem(
     task: TaskModel,
+    onShow: () -> Unit,
     onShare: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit
@@ -151,10 +193,14 @@ fun TaskItem(
     var expanded by remember { mutableStateOf(false) }
 
     Box(
-        Modifier.background(
-            color = Color.LightGray,
-            shape = RoundedCornerShape(4.dp)
-        )
+        Modifier
+            .background(
+                color = Color.LightGray,
+                shape = RoundedCornerShape(4.dp)
+            )
+            .clickable {
+                onShow()
+            }
     ) {
         Row(
             Modifier.padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),

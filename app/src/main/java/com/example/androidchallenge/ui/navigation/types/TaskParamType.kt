@@ -1,4 +1,4 @@
-package com.example.androidchallenge.ui.navigation
+package com.example.androidchallenge.ui.navigation.types
 
 import android.os.Bundle
 import androidx.navigation.NavType
@@ -17,6 +17,5 @@ class TaskParamType : NavType<TaskModel?>(isNullableAllowed = true) {
     override fun put(bundle: Bundle, key: String, value: TaskModel?) {
         bundle.putParcelable(key, value)
     }
-
 
 }
