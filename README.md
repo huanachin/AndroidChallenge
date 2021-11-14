@@ -48,4 +48,5 @@ Si se desea cambiar el archivo de configuración firebase con un propio
 
 ## Funcionalides pendientes
 
-- Pruebas Unitarias
+- Modo offline
+- Aumentar coverage de pruebas unitarias
