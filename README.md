@@ -30,6 +30,7 @@
 
 
 - Clonar el proyecto desde GitHub
+- Ejecutar test con "gradle test"
 - Compilar el proyecto
 - Instalar y/o generar apk
 
