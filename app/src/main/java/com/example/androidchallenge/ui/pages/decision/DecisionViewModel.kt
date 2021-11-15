@@ -28,7 +28,6 @@ class DecisionViewModel @Inject constructor(
     }
 
     private fun validateUser() {
-        val uri: Uri = Uri.EMPTY
         viewModelScope.launch {
             when (val result =
                 withContext(Dispatchers.IO) {
