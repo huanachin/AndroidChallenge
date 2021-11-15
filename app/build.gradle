@@ -6,6 +6,12 @@ plugins {
     id 'dagger.hilt.android.plugin'
 }
 
+tasks.withType(Test) {
+    testLogging {
+        events "started", "passed", "skipped", "failed"
+    }
+}
+
 android {
     compileSdk 31
 

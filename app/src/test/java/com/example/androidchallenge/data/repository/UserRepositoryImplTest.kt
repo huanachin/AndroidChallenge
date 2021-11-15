@@ -157,11 +157,4 @@ class UserRepositoryImplTest {
         }
     }
 
-    @Test
-    fun getCurrentUser() {
-    }
-
-    @Test
-    fun logout() {
-    }
 }
